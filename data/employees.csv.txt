@@ -1,0 +1,6 @@
+employee_id,employee_name,department
+E001,Arun,Enterprise
+E002,Priya,Mid-Market
+E003,Rahul,Enterprise
+E004,Divya,SMB
+E005,Karthik,SMB

@@ -1,0 +1,6 @@
+employee_id,employee_name,department,sales_target,actual_sales,month
+E001,Arun,Enterprise,500000,600000,2026-10
+E002,Priya,Mid-Market,400000,350000,2026-10
+E003,Rahul,Enterprise,800000,960000,2026-10
+E004,Divya,SMB,600000,720000,2026-10
+E005,Karthik,SMB,300000,240000,2026-10
