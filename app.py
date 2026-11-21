@@ -6,6 +6,10 @@ from modules.analytics import compute_kpis
 from modules.commission_engine import DEFAULT_PLAN, process_sales_data
 from modules.data_validation import validate_sales_data
 
+from modules.support_simulator import (attainment_wrong, commission_too_low, 
+payout_not_updated, sales_missing)
+from modules.database import get_connection, save_results
+
 
 def show_table(data):
     """Show a table without pyarrow (blocked on this PC)."""
@@ -31,8 +35,8 @@ else:
     df = pd.read_csv("data/sales_data.csv")
     st.sidebar.info("Using the built-in sample data")
 
-tab_dash, tab_data, tab_plan, tab_valid = st.tabs(
-    ["Dashboard", "Sales Data", "Commission Plan", "Validation"])
+tab_dash, tab_data, tab_plan, tab_valid, tab_support = st.tabs(
+    ["Dashboard", "Sales Data", "Commission Plan", "Validation", "Support Cases"])
 
 # ---------- Commission Plan tab ----------
 with tab_plan:
@@ -126,3 +130,43 @@ with tab_valid:
         show_table(pd.DataFrame(errors))
     else:
         st.success("No validation errors found.")
+
+# ---------- Support Cases tab ----------
+with tab_support:
+    st.subheader("Support case simulator")
+    case_type = st.selectbox("Choose a case", [
+        "Commission too low", "Sales missing",
+        "Attainment wrong", "Payout not updated"])
+    emp_ids = list(results["employee_id"])
+
+    case = None
+    if case_type == "Commission too low":
+        emp = st.selectbox("Employee", emp_ids, key="s1")
+        case = commission_too_low(df, emp, plan)
+    elif case_type == "Sales missing":
+        case = sales_missing(df)
+    elif case_type == "Attainment wrong":
+        emp = st.selectbox("Employee", emp_ids, key="s2")
+        reported = st.number_input("Attainment the customer sees (%)", value=100.0)
+        case = attainment_wrong(df, emp, reported)
+    else:
+        emp = st.selectbox("Employee", emp_ids, key="s3")
+        if st.button("Save current results to database"):
+            conn = get_connection()
+            save_results(conn, results, plan, "Saved from dashboard")
+            conn.close()
+            st.success("Saved.")
+        conn = get_connection()
+        case = payout_not_updated(conn, df, emp, plan)
+        conn.close()
+
+    st.write("**Issue:**", case["issue"])
+    st.write("**Checks:**")
+    for c in case["checks"]:
+        st.write("-", c)
+    st.write("**Evidence:**")
+    for e in case["evidence"]:
+        st.write("-", e)
+    st.write("**Root cause:**", case["root_cause"])
+    st.write("**Resolution:**", case["resolution"])
+    st.write("**Verification:**", case["verification"])
